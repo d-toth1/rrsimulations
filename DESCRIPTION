@@ -1,0 +1,21 @@
+Package: rrsimulations
+Type: Package
+Title: A Package to Simulate Regularized Regression Models
+Version: 0.1.0
+Author: David Toth
+Maintainer: Alan Huebner <alan.huebner.10@nd.edu>
+Description: rrsimulations is a package aimed at practioners and researchers
+who use lasso, ridge, and/or elastic-net models in their work. It provides a set
+of functions that allow users to easily run simulation studies to investigate
+how regularized regression models behave under different covariate structures 
+and fitting methods. 
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    tidyverse,
+    glmnet,
+    faux,
+    randcorr,
+    magrittr
+RoxygenNote: 7.1.1
