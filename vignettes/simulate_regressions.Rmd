@@ -1,0 +1,121 @@
+---
+title: "simulate_regressions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{simulate_regressions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+#  Introduction
+
+This vignette describes how to run simulation studies for regularized models and explains how each component of the package works.
+
+The `rrsimulations` package provides accessible functions for running simulations studies of regularized regression models. The primary function to run a simulation is `rrsimulations::simulate_regressions()`. We will demonstrate from the ground up how this function works. 
+
+
+```{r setup}
+rm(list = ls())
+library(rrsimulations)
+library(tidyverse)
+```
+
+# Data Generation
+
+Under the hood, `simulate_regressions()` makes use of the following functions:
+
+* `gen_data()`
+* `fit_regressions()`
+* `run_simulations()`
+
+The first governs the data generation process. Say we want to make a 500 x 2 matrix from a multivariate normal distribution to be used for linear regression. We can specify the parameters and generate this data as follows:
+
+```{r}
+data <- gen_data(type = "linear", 
+                 n = 500, 
+                 p = 2, 
+                 rho = 0.5,
+                 mu = c(0, 1), 
+                 stdev = c(1,1), 
+                 spars = 0.5, 
+                 betas = runif(2, 0.01, 0.2), 
+                 sigma = 1,
+                 train_size = 0.75)
+
+xtrain <- data$xtrain
+ytrain <- data$ytrain
+
+hist(xtrain[, 1])
+hist(xtrain[, 2])
+plot(xtrain[, 1], ytrain)
+plot(xtrain[, 2], ytrain)
+```
+Note that for the other available distributions, the values of `rho`, `mu`, and `stdev` are not important or used. 
+
+Because the model is linear, we had to specify `sigma`, which is the standard deviation of the residuals. 
+
+If we were to use another distribution other than the multivariate normal, we would specify this with `skew`. 
+
+
+# Model Fitting
+
+Fitting a single model after the data is generated is very simple. We already have the training and testing sets, and we know that our simulated data is for a linear model. We can proceed as follows:
+
+```{r}
+model <- fit_regressions(type = "linear", 
+                         xtrain = data$xtrain, 
+                         xtest = data$xtest,
+                         ytrain = data$ytrain, 
+                         ytest = data$ytest, 
+                         nfolds = 5)
+
+model 
+```
+
+The function provides a list of the fitted coefficients and accuracies (or RMSE for linear models) under the lasso and ridge models for both $\lambda_{min}$ and $\lambda_{1se}$. 
+
+# Simulation Part I
+
+The purpose of the package is, of course, to provide *simulation* functions. The base function for this is `run_simulations()`, which takes the same arguments as `gen_data()` but performs a series of trials specified by `ntrials` to provide a distribution of outcomes. 
+
+```{r}
+simple_simulation <- run_simulations(type = "linear", 
+                                     ntrials = 20,
+                                     n = 500, 
+                                     p = 2, 
+                                     rho = 0.5,
+                                     mu = c(0, 1), 
+                                     stdev = c(1,1), 
+                                     spars = 0.5, 
+                                     betas = runif(2, 0.01, 0.2), 
+                                     sigma = 1,
+                                     train_size = 0.75)
+
+simple_simulation
+```
+# Simulation Part II
+
+Now that we know how each component works, we can look at how to put it all together in the primary function `simulate_regressions()`. This allows us to do all of the same things above as well as vary the number of observations used in data generation and the number of folds used in cross-validation.
+
+```{r}
+full_simulation <- simulate_regressions(type = "linear",
+                                        n_folds = c(3, 5, 10),
+                                        n_obs = c(100, 500, 1000),
+                                        p = 2, 
+                                        rho = 0.5, 
+                                        mu = c(0, 1), 
+                                        stddev = c(1,1), 
+                                        spars = 0.5, 
+                                        betas = runif(2, 0.01, 0.2), 
+                                        sigma = 1)
+
+full_simulation
+```
+
